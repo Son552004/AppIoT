@@ -278,24 +278,58 @@ const App = () => {
     } finally { setIsSetupSending(false); }
   };
 
-  // ── Socket.io ─────────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!userId || (screen !== 'Dashboard' && screen !== 'Stats')) return;
-    const socket = io(SERVER_URL, { transports: ['websocket'], reconnection: true });
-
-    socket.on('connect', () => setStatus('Đang nhận dữ liệu...'));
+  // Thay dependency của useEffect từ [screen, userId] → [userId]
+// Điều này giúp Socket hoạt động độc lập với screen
+useEffect(() => {
+    // Kết nối socket khi có userId (không phụ thuộc vào screen)
+    if (!userId) return;
+    
+    const socket = io(SERVER_URL, { 
+      transports: ['websocket'], 
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5
+    });
+ 
+    socket.on('connect', () => {
+      console.log('✅ Socket connected');
+      setStatus('Đang nhận dữ liệu...');
+    });
+ 
     socket.on('health_update', (data) => {
-      if (data.userId == userId) {
+      console.log('📨 Received health_update:', data);
+      
+      // Cập nhật dữ liệu nếu khớp userId
+      // Hỗ trợ cả data.userId (từ MQTT) và data.heartRate từ bất kỳ nguồn nào
+      if (!data.userId || data.userId == userId) {
         setHeartRate(data.heartRate || 0);
         setSpo2(data.spo2 || 0);
         setStatus(data.drowsinessStatus || 'N/A');
-        if (new Date().getSeconds() % 5 === 0) fetchHistory(userId);
+        
+        // Cập nhật history mỗi 5 giây
+        if (new Date().getSeconds() % 5 === 0) {
+          fetchHistory(userId);
+        }
       }
     });
-
-    return () => socket.disconnect();
-  }, [screen, userId]);
-
+ 
+    socket.on('disconnect', () => {
+      console.log('❌ Socket disconnected');
+    });
+ 
+    socket.on('error', (error) => {
+      console.log('⚠️ Socket error:', error);
+    });
+ 
+    return () => {
+      socket.off('connect');
+      socket.off('health_update');
+      socket.off('disconnect');
+      socket.off('error');
+      socket.disconnect();
+    };
+  }, [userId]);
   // ── Chart data preparation ───────────────────────────────────────────────
   const chartPoints = [...historyData].reverse().slice(-12);
   const chartLabels = chartPoints.length > 0
