@@ -1,12 +1,6 @@
 /**
  * 🏥 HEALTH DATA MANAGER - APP REACT NATIVE
  * Giao diện quản lý lịch sử dữ liệu, xóa dữ liệu, và điều khiển thiết bị
- * 
- * Tính năng:
- * ✅ Xem lịch sử 100 bản ghi gần nhất
- * ✅ Xóa dữ liệu theo khoảng thời gian
- * ✅ Công tắc Sleep/Wakeup để tiết kiệm pin
- * ✅ Hiển thị trạng thái thiết bị
  */
 
 import React, { useState, useEffect } from 'react';
@@ -23,12 +17,9 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-const API_BASE_URL = 'http://your-render-server.onrender.com/api'; // 🔄 Thay bằng URL Server của bạn
+const API_BASE_URL = 'https://health-iot-server.onrender.com/api';
 
 const HealthDataManager = ({ userId }) => {
-    // ==========================================
-    // STATE MANAGEMENT
-    // ==========================================
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(false);
     const [deviceActive, setDeviceActive] = useState(true);
@@ -38,27 +29,21 @@ const HealthDataManager = ({ userId }) => {
     const [endDate, setEndDate] = useState(new Date());
     const [deletingData, setDeletingData] = useState(false);
 
-    // ==========================================
-    // 📥 FUNCTION: Lấy lịch sử dữ liệu
-    // ==========================================
+    // 📥 Lấy lịch sử dữ liệu
     const fetchHistory = async () => {
         try {
             setLoading(true);
             const response = await fetch(`${API_BASE_URL}/history/${userId}`);
             const data = await response.json();
             setHistory(data);
-            console.log('✅ Đã lấy lịch sử:', data.length, 'bản ghi');
         } catch (error) {
             Alert.alert('❌ Lỗi', 'Không thể lấy lịch sử dữ liệu');
-            console.error('Error fetching history:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    // ==========================================
-    // 🗑️ FUNCTION: Xóa dữ liệu theo khoảng thời gian
-    // ==========================================
+    // 🗑️ Xóa dữ liệu theo khoảng thời gian
     const deleteDataInRange = async () => {
         if (startDate > endDate) {
             Alert.alert('⚠️ Lỗi', 'Ngày bắt đầu phải trước ngày kết thúc!');
@@ -71,7 +56,7 @@ const HealthDataManager = ({ userId }) => {
             [
                 {
                     text: 'Hủy',
-                    onPress: () => console.log('Đã hủy xóa'),
+                    onPress: () => {},
                     style: 'cancel',
                 },
                 {
@@ -89,14 +74,10 @@ const HealthDataManager = ({ userId }) => {
                                 }),
                             });
                             const result = await response.json();
-                            Alert.alert(
-                                '✅ Thành công',
-                                `Đã xóa ${result.deletedCount} bản ghi`
-                            );
-                            fetchHistory(); // Tải lại lịch sử
+                            Alert.alert('✅ Thành công', `Đã xóa ${result.deletedCount} bản ghi`);
+                            fetchHistory();
                         } catch (error) {
                             Alert.alert('❌ Lỗi', 'Không thể xóa dữ liệu');
-                            console.error('Error deleting data:', error);
                         } finally {
                             setDeletingData(false);
                         }
@@ -107,9 +88,7 @@ const HealthDataManager = ({ userId }) => {
         );
     };
 
-    // ==========================================
-    // 💤 FUNCTION: Gửi lệnh SLEEP/WAKEUP
-    // ==========================================
+    // 💤 Gửi lệnh SLEEP/WAKEUP
     const sendDeviceCommand = async (command) => {
         try {
             const response = await fetch(`${API_BASE_URL}/device/control`, {
@@ -125,22 +104,17 @@ const HealthDataManager = ({ userId }) => {
             }
         } catch (error) {
             Alert.alert('❌ Lỗi', 'Không thể gửi lệnh tới thiết bị');
-            console.error('Error sending command:', error);
         }
     };
 
-    // ==========================================
-    // 🔄 FUNCTION: Xử lý thay đổi công tắc Sleep/Wakeup
-    // ==========================================
+    // Xử lý thay đổi công tắc
     const handleDeviceToggle = (value) => {
         setDeviceActive(value);
         const command = value ? 'WAKEUP' : 'SLEEP';
         sendDeviceCommand(command);
     };
 
-    // ==========================================
-    // 📅 XỬ LÝ CHỌN NGÀY
-    // ==========================================
+    // Xử lý chọn ngày
     const handleStartDateChange = (event, selectedDate) => {
         setShowStartDatePicker(false);
         if (selectedDate) setStartDate(selectedDate);
@@ -151,14 +125,11 @@ const HealthDataManager = ({ userId }) => {
         if (selectedDate) setEndDate(selectedDate);
     };
 
-    // Load lịch sử khi component được mount
     useEffect(() => {
         fetchHistory();
     }, [userId]);
 
-    // ==========================================
-    // 📊 RENDER: Item trong danh sách lịch sử
-    // ==========================================
+    // Render item trong danh sách
     const renderHistoryItem = ({ item }) => {
         const timeStr = new Date(item.timestamp).toLocaleString('vi-VN');
         return (
@@ -182,15 +153,11 @@ const HealthDataManager = ({ userId }) => {
         );
     };
 
-    // ==========================================
-    // 🎨 RENDER: GIAO DIỆN CHÍNH
-    // ==========================================
     return (
         <ScrollView style={styles.container}>
-            {/* 📌 HEADER */}
             <Text style={styles.header}>🏥 Quản lý Y Tế</Text>
 
-            {/* 💤 CÔNG TẮC SLEEP/WAKEUP */}
+            {/* 💤 Công tắc Sleep/Wakeup */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>💤 Trạng thái Thiết bị</Text>
                 <View style={styles.deviceControl}>
@@ -210,16 +177,13 @@ const HealthDataManager = ({ userId }) => {
                         thumbColor={deviceActive ? '#fff' : '#fff'}
                     />
                 </View>
-                <Text style={styles.hint}>
-                    Tắt thiết bị để tiết kiệm pin. Đèn LED trên cảm biến sẽ tắt.
-                </Text>
+                <Text style={styles.hint}>Tắt thiết bị để tiết kiệm pin. Đèn LED sẽ tắt.</Text>
             </View>
 
-            {/* 📅 CHỌN NGÀY & XÓA DỮ LIỆU */}
+            {/* 📅 Chọn ngày và xóa */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>🗑️ Xóa dữ liệu theo khoảng thời gian</Text>
 
-                {/* Chọn ngày bắt đầu */}
                 <TouchableOpacity
                     style={styles.dateButton}
                     onPress={() => setShowStartDatePicker(true)}
@@ -237,7 +201,6 @@ const HealthDataManager = ({ userId }) => {
                     />
                 )}
 
-                {/* Chọn ngày kết thúc */}
                 <TouchableOpacity
                     style={styles.dateButton}
                     onPress={() => setShowEndDatePicker(true)}
@@ -255,7 +218,6 @@ const HealthDataManager = ({ userId }) => {
                     />
                 )}
 
-                {/* Nút Xóa */}
                 <TouchableOpacity
                     style={[styles.deleteButton, deletingData && { opacity: 0.5 }]}
                     onPress={deleteDataInRange}
@@ -269,7 +231,7 @@ const HealthDataManager = ({ userId }) => {
                 </TouchableOpacity>
             </View>
 
-            {/* 📊 LỊCH SỬ DỮ LIỆU */}
+            {/* 📊 Lịch sử */}
             <View style={styles.section}>
                 <View style={styles.historyHeader}>
                     <Text style={styles.sectionTitle}>📊 Lịch sử ({history.length} bản ghi)</Text>
@@ -299,9 +261,6 @@ const HealthDataManager = ({ userId }) => {
     );
 };
 
-// ==========================================
-// 🎨 STYLESHEET
-// ==========================================
 const styles = StyleSheet.create({
     container: {
         flex: 1,

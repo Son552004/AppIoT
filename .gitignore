@@ -66,6 +66,9 @@ yarn-error.log
 # testing
 /coverage
 
+# Expo
+.expo/
+
 # Yarn
 .yarn/*
 !.yarn/patches
